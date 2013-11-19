@@ -7,21 +7,27 @@ import win32con
 import numpy
 import Image
 
+from ..screen import Screen
+
 class Screenshot:
+    def __init__(self):
+        self._screen = Screen()
+    
     def grab(self, x=None, y=None, width=None, height=None):
         hWnd = win32gui.GetDesktopWindow()
         hDC = win32gui.GetWindowDC(hWnd)
         dcObj  = win32ui.CreateDCFromHandle(hDC)
         cDC = dcObj.CreateCompatibleDC()
 
+        sc = self._screen.get_screen_size()
         if not x:
-            x = win32api.GetSystemMetrics(win32con.SM_XVIRTUALSCREEN)
+            x = sc.x1
         if not y:
-            y = win32api.GetSystemMetrics(win32con.SM_YVIRTUALSCREEN)
+            y = sc.y1
         if not width:
-            width = win32api.GetSystemMetrics(win32con.SM_CXVIRTUALSCREEN)
+            width = sc.width
         if not height:
-            height = win32api.GetSystemMetrics(win32con.SM_CYVIRTUALSCREEN)
+            height = sc.height
 
         dataBitMap = win32ui.CreateBitmap()
         dataBitMap.CreateCompatibleBitmap(dcObj, width, height)

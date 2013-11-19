@@ -21,7 +21,7 @@ framework to be extended by each platform.
 import time
 from threading import Thread
 
-class PyKeyboardMeta(object):
+class KeyboardMeta(object):
     """
     The base class for PyKeyboard. Represents basic operational model.
     """
@@ -66,7 +66,7 @@ class PyKeyboardMeta(object):
             return True
         return False
 
-class PyKeyboardEventMeta(Thread):
+class KeyboardEventMeta(Thread):
     """
     The base class for PyKeyboard. Represents basic operational model.
     """

@@ -18,8 +18,6 @@ class Clipboard(XObject):
     def __init__(self, display=None):
         XObject.__init__(self, display=display)
         self.event = None
-        
-        self.display = self._getdisplay()
                        
         self.targets_atom = self.display.intern_atom("TARGETS", False)
         self.delete_atom = self.display.intern_atom("DELETE", False)
@@ -38,14 +36,6 @@ class Clipboard(XObject):
             
         self.WM_DELETE_WINDOW = self.display.intern_atom('WM_DELETE_WINDOW')
         self.WM_PROTOCOLS = self.display.intern_atom('WM_PROTOCOLS')
-            
-    def _getdisplay(self):
-        stdout = sys.stdout
-        with open('/dev/null', 'w') as sys.stdout:
-            display = Display()
-        sys.stdout = stdout
-        
-        return display
 
     def get(self, name=CLIPBOARD):        
         #Get selection atom from atom name
@@ -86,8 +76,8 @@ class Clipboard(XObject):
         return data.value
 
     
-    def _set(self, text, name=CLIPBOARD):
-        self.display = self._getdisplay()
+    def _set(self, text, name=CLIPBOARD, display=None):
+        XObject.__init__(self, display=display)
         
         screen = self.display.screen()
         window = screen.root.create_window(

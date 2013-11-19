@@ -18,7 +18,7 @@ from Xlib import X, XK, protocol
 from Xlib.XK import string_to_keysym, load_keysym_group
 from Xlib.ext import record
 
-from .base import PyKeyboardMeta, PyKeyboardEventMeta
+from .base import KeyboardMeta, KeyboardEventMeta
 
 import time
 
@@ -83,7 +83,7 @@ MASK_INDEXES = [
                (X.Mod5MapIndex, X.Mod5Mask),
                ]
 
-class PyKeyboard(PyKeyboardMeta):
+class Keyboard(KeyboardMeta):
     """
     The PyKeyboard implementation for X11 systems (mostly linux). This
     allows one to simulate keyboard input.
@@ -328,7 +328,7 @@ class PyKeyboard(PyKeyboardMeta):
         
         return ch_keycode, ch_mask
 
-class PyKeyboardEvent(PyKeyboardEventMeta):
+class KeyboardEvent(KeyboardEventMeta):
     """
     The PyKeyboardEvent implementation for X11 systems (mostly linux). This
     allows one to listen for keyboard input.

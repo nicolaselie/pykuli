@@ -16,7 +16,7 @@
 import time
 from Quartz import *
 from AppKit import NSEvent
-from .base import PyKeyboardMeta, PyKeyboardEventMeta
+from .base import KeyboardMeta, KeyboardEventMeta
 
 # Taken from events.h
 # /System/Library/Frameworks/Carbon.framework/Versions/A/Frameworks/HIToolbox.framework/Versions/A/Headers/Events.h
@@ -103,7 +103,7 @@ special_key_translate_table = {
     'KEYTYPE_ILLUMINATION_TOGGLE': 23
 }
 
-class PyKeyboard(PyKeyboardMeta):
+class Keyboard(KeyboardMeta):
     def press_key(self, key):
         if key in special_key_translate_table:
             self._press_special_key(key, True)
@@ -169,7 +169,7 @@ class PyKeyboard(PyKeyboardMeta):
 
         CGEventPost(0, ev.CGEvent())
 
-class PyKeyboardEvent(PyKeyboardEventMeta):
+class KeyboardEvent(KeyboardEventMeta):
     def run(self):
         tap = CGEventTapCreate(
             kCGSessionEventTap,

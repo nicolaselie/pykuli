@@ -18,7 +18,7 @@ import win32api
 from win32con import *
 import pythoncom
 
-from .base import PyKeyboardMeta, PyKeyboardEventMeta
+from .base import KeyboardMeta, KeyboardEventMeta
 
 import time
 import struct
@@ -31,7 +31,7 @@ class SupportError(Exception):
     def __str__(self):
         return('The {0} key is not supported in Windows'.format(self.value))
 
-class PyKeyboard(PyKeyboardMeta):
+class Keyboard(KeyboardMeta):
     """
     The PyKeyboard implementation for Windows systems. This allows one to
     simulate keyboard input.
@@ -237,7 +237,7 @@ class PyKeyboard(PyKeyboardMeta):
         self.redo_key = None
         self.script_switch_key = None
 
-class PyKeyboardEvent(PyKeyboardEventMeta):
+class KeyboardEvent(KeyboardEventMeta):
     """
     The PyKeyboardEvent implementation for Windows Systems. This allows one
     to listen for keyboard input.

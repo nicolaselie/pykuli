@@ -9,14 +9,18 @@ from Xlib import X, Xatom, Xutil, protocol, error
 import xdg.Menu
 import xdg.DesktopEntry
 
+from ..screen import *
 from ..util import *
 from ..screenshot import Screenshot
+
+APP_LIST = list_startmenu_applications()
 
 class Window(XObject):
     def __init__(self, win=None, display=None):
         XObject.__init__(self, display=display)
         
         self._screengrabber = Screenshot()
+        self._screen = Screen()
 
         self.NET_ACTIVE_WINDOW_ATOM = self.display.intern_atom('_NET_ACTIVE_WINDOW', False)
         self.NET_CLIENT_LIST_ATOM = self.display.intern_atom('_NET_CLIENT_LIST', False)
@@ -122,22 +126,30 @@ class Window(XObject):
             
     def get_geometry(self):
         if self._window != None:
-            extents = self._window.get_full_property(self.NET_FRAME_EXTENTS_ATOM, 0).value
-            
-            geom = self._window.get_geometry()._data
-            coords = self._window.translate_coords(geom['root'],
-                                                    geom['x'],
-                                                    geom['y'])._data
-            #print coords
-            geom['x'] = -coords['x'] - int(extents[0]) #+ delta['x']
-            geom['y'] = -coords['y'] - int(extents[2]) # + delta['y']
-            return geom
+            win = self._window
+            root = self.get_root()
+            while(win.query_tree().parent.id != root.id):
+                win = win.query_tree().parent
+                
+            return win.get_geometry()._data
         
     def grab(self):
         if self._window != None:
             self.focus()
+            time.sleep(0.1)
             x, y = self.get_pos()
             width, height = self.get_size()
+            sc = self._screen.get_screen_size()
+            if x + width > sc.x1 + sc.width:
+                width = sc.x1 + sc.width - x
+            if y + height > sc.y1 + sc.height:
+                height = sc.y1 + sc.height - y
+            if x < sc.x1:
+                width -= abs(abs(sc.x1) - abs(x))
+                x = sc.x1
+            if y < sc.y1:
+                height -= abs(abs(sc.y1) - abs(y))
+                y = sc.y1
             return self._screengrabber.grab(x=x,
                                             y=y,
                                             width=width,
@@ -175,7 +187,6 @@ class App(Window):
     def __init__(self, name=None, win=None, display=None):
         Window.__init__(self, win=win, display=display)
         
-        self._name = name
         if type(name) == str or type(name) == unicode:
             self.set_window(name)
             
@@ -191,61 +202,36 @@ class App(Window):
             else:
                 self._command = None
         else:
-            self._command = None     
-
-    def _detect_desktop_environment(self):
-        #http://h3manth.com/content/desktop-session-detection-python
-        desktop_environment = 'generic'
-        if os.environ.get('KDE_FULL_SESSION') == 'true':
-            desktop_environment = 'kde'
-        elif os.environ.get('GNOME_DESKTOP_SESSION_ID'):
-            desktop_environment = 'gnome'
-        else:
-            try:
-                info = getoutput('xprop -root _DT_SAVE_MODE')
-                if ' = "xfce4"' in info:
-                    desktop_environment = 'xfce'
-            except (OSError, RuntimeError):
-                pass
-        return desktop_environment
+            self._command = None
         
     def _get_commands_from_name(self, name, menu=None, commands=[]):
-        if menu == None:
-            if os.environ.get('XDG_MENU_PREFIX') == None:
-                env = self._detect_desktop_environment()
-                if env != "generic":
-                    os.environ['XDG_MENU_PREFIX'] = env + "-"     
-            menu = xdg.Menu.parse()
-
-        for entry in menu.getEntries():
-                if isinstance(entry, xdg.Menu.Menu):
-                        commands = self._get_commands_from_name(name,
-                                                                menu=entry,
-                                                                commands=commands)
-                elif isinstance(entry, xdg.Menu.MenuEntry):
-                        if name in entry.DesktopEntry.getName() \
-                          or name in entry.DesktopEntry.getGenericName():
-                            command = entry.DesktopEntry.getExec()
-                            
-                            #Fill up special fields
-                            #http://standards.freedesktop.org/desktop-entry-spec/desktop-entry-spec-latest.html
-                            command = command.replace("%i",
-                                                entry.DesktopEntry.getIcon())
-                            command = command.replace("%c",
-                                                entry.DesktopEntry.getName())
-                            command = command.replace("%k",
-                                                entry.DesktopEntry.getPath())
-                            
-                            #Clean up
-                            params = command.split()
-                            for param in params:
-                                if param in ['%f', '%u', '%F', '%U', '%d', '%D',
-                                        '%n', '%N', '%v', '%m']:
-                                    params.pop()
-                                if params[-1].startswith("-"):
-                                    params.pop()
-                            command = " ".join(params)
-                            commands.append(command)
+        commands = []
+        for entry in APP_LIST:
+            if name in entry.getName() or name in entry.getGenericName():
+                command = entry.getExec()
+                if command == '':
+                    continue
+                
+                #Fill up special fields
+                #http://standards.freedesktop.org/desktop-entry-spec/desktop-entry-spec-latest.html
+                command = command.replace("%i",
+                                    entry.getIcon())
+                command = command.replace("%c",
+                                    entry.getName())
+                command = command.replace("%k",
+                                    entry.getPath())
+                
+                #Clean up
+                params = command.split()
+                for param in params:
+                    if param in ['%f', '%u', '%F', '%U', '%d', '%D',
+                            '%n', '%N', '%v', '%m']:
+                        params.pop()
+                    if params[-1].startswith("-"):
+                        params.pop()
+                command = " ".join(params)
+                commands.append(command)
+                
         return commands
         
     def list_windows(self):
@@ -265,18 +251,21 @@ class App(Window):
         return win_list
     
     def set_window(self, name):
+        self._name = name
         for window in self.list_windows():
             if name in window.get_title():
-                self._window = window
+                self._window = window._window
                 return True
         return False
                     
     def get_window(self):
-        return Window(win=self._window, display=self.display)
+        if self._window != None:
+            return Window(win=self._window, display=self.display)
             
     def open(self, timeout=TIMEOUT):
         if self._command != None:
             p = subprocess.Popen(self._command, shell=True)
+            time.sleep(2)
             self.wait(timeout=timeout, pid=p.pid)
                 
     def wait(self, timeout=TIMEOUT, name=None, pid=None):
@@ -284,9 +273,10 @@ class App(Window):
         if type(pid) == int:
             while time.time()-t0<timeout:
                 for window in self.list_windows():
-                    if window.get_pid == pid:
-                        self.window = window
+                    if window.get_pid() == pid:
+                        self._window = window._window
                         return True
+            print "timeout", pid
         elif type(name) == str or type(name) == unicode:
             while time.time()-t0<timeout:
                 if self.set_window() == True:

@@ -14,7 +14,8 @@
 #along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 from ctypes import *
-import win32api, win32con
+import win32api
+import win32con
 from .base import PyMouseMeta, PyMouseEventMeta, ScrollSupportError
 import pythoncom
 from time import sleep

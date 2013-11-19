@@ -1,5 +1,16 @@
 import sys
+import os
+import glob
+
 from Xlib.display import Display
+
+import xdg.BaseDirectory
+from xdg.DesktopEntry import DesktopEntry
+
+def list_startmenu_applications ():
+    for p in xdg.BaseDirectory.xdg_data_dirs:
+        for filename in glob.glob(os.path.join(p, "applications", "*.desktop")):
+            yield DesktopEntry(filename)
 
 class XObject(object):
     def __init__(self, display=None):        
@@ -13,4 +24,4 @@ class XObject(object):
         with open('/dev/null', 'w') as sys.stdout:
             display = Display()
         sys.stdout = stdout
-        return display 
+        return display
